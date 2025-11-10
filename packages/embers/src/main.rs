@@ -84,7 +84,8 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
 
-            write_client.propose().await?;
+            // Try to propose, but don't fail if validator is busy
+            let _ = write_client.propose().await;
 
             anyhow::Ok((agents_service, agents_teams_service, wallets_service))
         },
@@ -104,7 +105,8 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
 
-            testnet_write_client.propose().await?;
+            // Try to propose, but don't fail if validator is busy
+            let _ = testnet_write_client.propose().await;
 
             anyhow::Ok(testnet_service)
         },
