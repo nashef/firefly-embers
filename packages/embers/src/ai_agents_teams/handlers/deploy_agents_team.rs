@@ -1,7 +1,7 @@
 use anyhow::Context;
-use chrono::Utc;
-use firefly_client::models::DeployId;
-use firefly_client::rendering::{Render, Uri};
+use chrono::{DateTime, Utc};
+use firefly_client::models::{DeployId, Uri};
+use firefly_client::rendering::Render;
 
 use crate::ai_agents_teams::compilation::{parse, render_agent_team};
 use crate::ai_agents_teams::handlers::AgentsTeamsService;
@@ -14,12 +14,12 @@ use crate::common::prepare_for_signing;
 use crate::common::tracing::record_trace;
 
 #[derive(Debug, Clone, Render)]
-#[template(path = "ai_agents/record_deploy.rho")]
-struct UpdateLastDeploy {
+#[template(path = "ai_agents_teams/record_deploy.rho")]
+struct RecordDeploy {
     env_uri: Uri,
     id: String,
-    version: String,
-    last_deploy: i64,
+    last_deploy: DateTime<Utc>,
+    uri: Uri,
 }
 
 impl AgentsTeamsService {
@@ -52,11 +52,11 @@ impl AgentsTeamsService {
                     .graph
                     .context("agents team has no graph")?;
 
-                let system_code = UpdateLastDeploy {
+                let system_code = RecordDeploy {
                     env_uri: self.uri.clone(),
                     id,
-                    version,
-                    last_deploy: Utc::now().timestamp(),
+                    last_deploy: Utc::now(),
+                    uri: deploy.uri_pub_key.into(),
                 }
                 .render()?;
 

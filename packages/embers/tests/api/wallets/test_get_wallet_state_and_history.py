@@ -16,7 +16,11 @@ def test_get_wallet_state_and_history__empty_wallet(client: ApiClient, wallet: W
 
 
 @pytest.mark.parametrize("funded_wallet", [10_000], indirect=True)
-def test_get_wallet_state_and_history__funded_wallet(client: ApiClient, funded_wallet: Wallet):
+def test_get_wallet_state_and_history__funded_wallet(
+    client: ApiClient,
+    funded_wallet: Wallet,
+    prepopulated_wallet: Wallet,
+):
     resp = client.wallets.get_wallet_state_and_history(funded_wallet.address)
 
     assert resp.status == 200
@@ -27,5 +31,5 @@ def test_get_wallet_state_and_history__funded_wallet(client: ApiClient, funded_w
     assert len(resp.json["transfers"]) == 1
     assert_match_transfer(
         resp.json["transfers"][0],
-        {"direction": "incoming", "amount": "10000", "to_address": funded_wallet.address},
+        {"from": prepopulated_wallet.address, "to": funded_wallet.address, "amount": "10000"},
     )

@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use firefly_client::models::DeployId;
-use firefly_client::rendering::{Render, Uri};
+use firefly_client::models::{DeployId, Uri};
+use firefly_client::rendering::Render;
 
 use crate::common::prepare_for_signing;
 use crate::common::tracing::record_trace;

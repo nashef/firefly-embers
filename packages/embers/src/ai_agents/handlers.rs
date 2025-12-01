@@ -1,4 +1,4 @@
-use firefly_client::rendering::Uri;
+use firefly_client::models::Uri;
 use firefly_client::{ReadNodeClient, WriteNodeClient};
 
 mod create_agent;

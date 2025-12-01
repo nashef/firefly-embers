@@ -1,7 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use derive_more::Display;
-use firefly_client::rendering::{Inline, Render, Uri};
+use firefly_client::models::Uri;
+use firefly_client::rendering::{Inline, Render};
 
 use crate::ai_agents_teams::compilation::graphl_parsing::Vertex;
 use crate::ai_agents_teams::compilation::{Code, Node};

@@ -1,5 +1,5 @@
-use firefly_client::models::WalletAddress;
-use firefly_client::rendering::{Render, Uri};
+use firefly_client::models::{Uri, WalletAddress};
+use firefly_client::rendering::Render;
 
 use crate::ai_agents_teams::blockchain::dtos;
 use crate::ai_agents_teams::handlers::AgentsTeamsService;

@@ -16,3 +16,18 @@ impl<'de> Deserialize<'de> for DateTime {
             .ok_or_else(|| de::Error::custom("invalid timestamp"))
     }
 }
+
+#[derive(Debug, Clone, Into)]
+pub struct Uri(firefly_client::models::Uri);
+
+impl<'de> Deserialize<'de> for Uri {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        firefly_client::models::Uri::try_from(value)
+            .map(Self)
+            .map_err(de::Error::custom)
+    }
+}

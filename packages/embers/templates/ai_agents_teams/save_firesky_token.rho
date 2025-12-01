@@ -1,6 +1,6 @@
 new rl(`rho:registry:lookup`), agentsTeamsCh in {
     rl!({{ env_uri }}, *agentsTeamsCh) |
     for(@(_, agentsTeams) <- agentsTeamsCh) {
-        @agentsTeams!("recordDeploy", {{ id }}, {{ uri }}, {{ last_deploy }})
+        @agentsTeams!("saveFireskyToken", {{ uri }}, {{ nonce }}, {{ ciphertext }})
     }
 }

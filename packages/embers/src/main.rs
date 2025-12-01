@@ -71,6 +71,7 @@ async fn main() -> anyhow::Result<()> {
                 observer_node_events.clone(),
                 &config.mainnet.service_key,
                 &config.mainnet.agents_teams_env_key,
+                config.aes_encryption_key,
             )
             .await?;
 

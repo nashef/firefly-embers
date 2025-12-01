@@ -46,6 +46,7 @@ pub struct AgentsTeam {
     pub version: String,
     pub created_at: blockchain::dtos::DateTime,
     pub last_deploy: Option<blockchain::dtos::DateTime>,
+    pub uri: Option<blockchain::dtos::Uri>,
     pub name: String,
     pub description: Option<String>,
     pub shard: Option<String>,

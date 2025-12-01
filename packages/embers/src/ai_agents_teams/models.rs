@@ -1,8 +1,7 @@
 use std::convert::Infallible;
 
 use chrono::{DateTime, Utc};
-use firefly_client::models::{SignedCode, WalletAddress};
-use firefly_client::rendering::Uri;
+use firefly_client::models::{SignedCode, Uri, WalletAddress};
 
 use crate::common::models::{PositiveNonZero, PreparedContract, RegistryDeploy};
 
@@ -65,6 +64,7 @@ pub struct AgentsTeam {
     pub version: String,
     pub created_at: DateTime<Utc>,
     pub last_deploy: Option<DateTime<Utc>>,
+    pub uri: Option<Uri>,
     pub name: String,
     pub description: Option<String>,
     pub shard: Option<String>,
@@ -129,5 +129,19 @@ pub struct RunAgentsTeamReq {
 
 #[derive(Debug, Clone)]
 pub struct RunAgentsTeamResp {
+    pub contract: PreparedContract,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublishAgentsTeamToFireskyReq {
+    pub pds_url: String,
+    pub email: String,
+    pub handle: String,
+    pub password: String,
+    pub invite_code: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublishAgentsTeamToFireskyResp {
     pub contract: PreparedContract,
 }

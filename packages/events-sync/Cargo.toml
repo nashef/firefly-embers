@@ -17,11 +17,11 @@ scopeguard        = { version = "1.2" }
 secp256k1         = { version = "0.31", features = ["hashes"] }
 serde             = { version = "1.0", features = ["derive"] }
 serde_json        = { version = "1.0" }
-tokio             = { version = "1.47", features = ["macros", "rt-multi-thread", "signal", "sync"] }
+tokio             = { version = "1.48", features = ["macros", "rt-multi-thread", "signal", "sync"] }
 tokio-stream      = { version = "0.1" }
 tokio-tungstenite = { version = "0.28" }
 tonic             = { version = "0.14" }
-uuid              = { version = "1.17", features = ["v4"] }
+uuid              = { version = "1.18", features = ["v4"] }
 warp              = { version = "0.4", features = ["server", "websocket"] }
 
 [lints.clippy]

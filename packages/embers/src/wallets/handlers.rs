@@ -1,6 +1,7 @@
-use firefly_client::rendering::Uri;
+use firefly_client::models::Uri;
 use firefly_client::{NodeEvents, ReadNodeClient, WriteNodeClient};
 
+mod boost;
 mod get_wallet_state_and_history;
 mod subscribe_to_deploys;
 mod transfer;

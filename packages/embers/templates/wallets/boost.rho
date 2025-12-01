@@ -1,0 +1,15 @@
+new rl(`rho:registry:lookup`), walletsCh in {
+    rl!({{ env_uri }}, *walletsCh) |
+    for(@(_, wallets) <- walletsCh) {
+        @wallets!(
+            "boost",
+            {{ timestamp }},
+            {{ wallet_address_from }},
+            {{ wallet_address_to }},
+            {{ amount }},
+            {{ description }},
+            {{ post_author_did }},
+            {{ post_id }},
+        )
+    }
+}

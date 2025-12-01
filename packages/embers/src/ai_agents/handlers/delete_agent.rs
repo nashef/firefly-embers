@@ -1,5 +1,5 @@
-use firefly_client::models::{DeployId, SignedCode};
-use firefly_client::rendering::{Render, Uri};
+use firefly_client::models::{DeployId, SignedCode, Uri};
+use firefly_client::rendering::Render;
 
 use crate::ai_agents::handlers::AgentsService;
 use crate::ai_agents::models::DeleteAgentResp;

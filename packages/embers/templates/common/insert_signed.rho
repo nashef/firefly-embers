@@ -3,6 +3,7 @@ new rl(`rho:registry:lookup`),
     abort(`rho:execution:abort`),
     prevEnvCh,
     initEnv,
+    contractDeployer(`rho:rchain:deployerId`),
     {% block name %}{% endblock %},
     uriCh
 in {

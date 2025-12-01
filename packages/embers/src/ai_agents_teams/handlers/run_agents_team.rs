@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use anyhow::anyhow;
-use firefly_client::models::{DeployId, SignedCode};
-use firefly_client::rendering::{Render, Uri};
+use firefly_client::models::{DeployId, SignedCode, Uri};
+use firefly_client::rendering::Render;
 
 use crate::ai_agents_teams::handlers::AgentsTeamsService;
 use crate::ai_agents_teams::models::{RunAgentsTeamReq, RunAgentsTeamResp};

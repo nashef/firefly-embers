@@ -15,7 +15,9 @@ new rl(`rho:registry:lookup`),
     deployData(`rho:deploy:data`),
     okOrAbort,
     doTransfer,
+    getOrCreateHistoryEntry,
     updateTransferHistory,
+    updateBoostHistory,
     getTransactionsHistory,
     getBalance
 in {
@@ -70,55 +72,88 @@ in {
         }
     } |
 
-    contract updateTransferHistory(@walletOwner, @id, @timestamp, @walletAddressFrom, @walletAddressTo, @amount, @description) = {
-        new valueCh, nilCh in {
+    contract getOrCreateHistoryEntry(@walletOwner, ret) = {
+        new nilCh in {
             for(treeHashMap, @map <<- treeHashMapCh; stack <<- stackCh) {
-                treeHashMap!("getOrElse", map, walletOwner, *valueCh, *nilCh) |
+                treeHashMap!("getOrElse", map, walletOwner, *ret, *nilCh) |
 
                 for(<- nilCh) {
-                    new userHistoryCh in {
-                        stack!("init", *userHistoryCh) |
+                    new transferHistoryCh, boostHistoryCh in {
+                        stack!("init", *transferHistoryCh) |
+                        stack!("init", *boostHistoryCh) |
 
-                        for(@history <- userHistoryCh) {
-                            stack!("push", history, {
-                                "id": id,
-                                "timestamp": timestamp,
-                                "from": walletAddressFrom,
-                                "to": walletAddressTo,
-                                "amount": amount,
-                                "description": description,
-                            }, *devNull) |
-                            treeHashMap!("set", map, walletOwner, history, *devNull)
+                        for(@transferHistory <- transferHistoryCh & @boostHistory <- boostHistoryCh) {
+                            treeHashMap!("set", map, walletOwner, (transferHistory, boostHistory), *devNull) |
+                            ret!((transferHistory, boostHistory))
                         }
                     }
-                } |
-
-                for(@history <- valueCh) {
-                    stack!("push", history, {
-                        "id": id,
-                        "timestamp": timestamp,
-                        "from": walletAddressFrom,
-                        "to": walletAddressTo,
-                        "amount": amount,
-                        "description": description,
-                    }, *devNull)
                 }
             }
         }
     } |
 
-    contract wallets(@"sendTransfer", @timestamp, @walletAddressFrom, @walletAddressTo, @amount, @description) = {
+    contract updateTransferHistory(@walletOwner, @id, @timestamp, @walletAddressFrom, @walletAddressTo, @amount, @description) = {
+        new userHistoryCh in {
+            getOrCreateHistoryEntry!(walletOwner, *userHistoryCh) |
+
+            for(@(transferHistory, _) <- userHistoryCh; stack <<- stackCh) {
+                stack!("push", transferHistory, {
+                    "id": id,
+                    "timestamp": timestamp,
+                    "from": walletAddressFrom,
+                    "to": walletAddressTo,
+                    "amount": amount,
+                    "description": description,
+                }, *devNull)
+            }
+        }
+    } |
+
+    contract wallets(@"transfer", @timestamp, @walletAddressFrom, @walletAddressTo, @amount, @description) = {
         new deployDataCh, transferResultCh, updateHistory in {
             deployData!(*deployDataCh) |
             for(either <<- eitherCh; _, @deployerId, @deployId <- deployDataCh) {
                 doTransfer!(deployerId, walletAddressFrom, walletAddressTo, amount, *transferResultCh) |
+                okOrAbort!(*transferResultCh, *updateHistory, "transfer failed") |
 
                 for(_ <- updateHistory) {
                     updateTransferHistory!(walletAddressFrom, deployId, timestamp, walletAddressFrom, walletAddressTo, amount, description) |
                     updateTransferHistory!(walletAddressTo  , deployId, timestamp, walletAddressFrom, walletAddressTo, amount, description)
-                } |
+                }
+            }
+        }
+    } |
 
-                okOrAbort!(*transferResultCh, *updateHistory, "transfer failed")
+    contract updateBoostHistory(@walletOwner, @id, @timestamp, @walletAddressFrom, @walletAddressTo, @amount, @description, @post_author_did, @post_id) = {
+        new userHistoryCh in {
+            getOrCreateHistoryEntry!(walletOwner, *userHistoryCh) |
+
+            for(@(_, boostHistory) <- userHistoryCh; stack <<- stackCh) {
+                stack!("push", boostHistory, {
+                    "id": id,
+                    "timestamp": timestamp,
+                    "from": walletAddressFrom,
+                    "to": walletAddressTo,
+                    "amount": amount,
+                    "description": description,
+                    "post_author_did": post_author_did,
+                    "post_id": post_id,
+                }, *devNull)
+            }
+        }
+    } |
+
+    contract wallets(@"boost", @timestamp, @walletAddressFrom, @walletAddressTo, @amount, @description, @post_author_did, @post_id) = {
+        new deployDataCh, transferResultCh, updateHistory in {
+            deployData!(*deployDataCh) |
+            for(either <<- eitherCh; _, @deployerId, @deployId <- deployDataCh) {
+                doTransfer!(deployerId, walletAddressFrom, walletAddressTo, amount, *transferResultCh) |
+                okOrAbort!(*transferResultCh, *updateHistory, "boost failed") |
+
+                for(_ <- updateHistory) {
+                    updateBoostHistory!(walletAddressFrom, deployId, timestamp, walletAddressFrom, walletAddressTo, amount, description, post_author_did, post_id) |
+                    updateBoostHistory!(walletAddressTo  , deployId, timestamp, walletAddressFrom, walletAddressTo, amount, description, post_author_did, post_id)
+                }
             }
         }
     } |
@@ -130,15 +165,16 @@ in {
             } |
 
             for(<- nilCh) {
-                ret!([])
+                ret!({"transfers": [], "boosts": []})
             } |
 
-            for(@history <- valueCh; stack <<- stackCh) {
-                new listCh in {
-                    stack!("toList", history, *listCh) |
+            for(@(transferHistory, boostHistory) <- valueCh; stack <<- stackCh) {
+                new transferHistoryListCh, boostHistoryListCh in {
+                    stack!("toList", transferHistory, *transferHistoryListCh) |
+                    stack!("toList", boostHistory, *boostHistoryListCh) |
 
-                    for(@transactionsHistory <- listCh) {
-                        ret!(transactionsHistory)
+                    for(@transfers <- transferHistoryListCh & @boosts <- boostHistoryListCh) {
+                        ret!({"transfers": transfers, "boosts": boosts})
                     }
                 }
             }
@@ -165,11 +201,11 @@ in {
                 getBalance!(walletAddress, *balanceCh) |
                 getTransactionsHistory!(walletAddress, *historyCh) |
 
-                for(@balance, return <- mapOp & @history <- historyCh) {
-                    return!({"balance": balance, "history": history})
-                } |
+                either!("map <-", *balanceCh, *mapOp, *ret) |
 
-                either!("map <-", *balanceCh, *mapOp, *ret)
+                for(@balance, return <- mapOp & @history <- historyCh) {
+                    return!({"balance": balance}.union(history))
+                }
             }
         }
     }

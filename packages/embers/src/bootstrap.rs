@@ -1,7 +1,7 @@
 use anyhow::Context;
 use firefly_client::helpers::insert_signed_signature;
-use firefly_client::models::DeployData;
-use firefly_client::rendering::{Render, Uri};
+use firefly_client::models::{DeployData, Uri};
+use firefly_client::rendering::Render;
 use firefly_client::{NodeEvents, ReadNodeClient, WriteNodeClient};
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
@@ -78,6 +78,7 @@ impl AgentsTeamsService {
         observer_node_events: NodeEvents,
         deployer_key: &SecretKey,
         env_key: &SecretKey,
+        aes_encryption_key: [u8; 32],
     ) -> anyhow::Result<Self> {
         let secp = Secp256k1::new();
         let env_public_key = PublicKey::from_secret_key(&secp, env_key);
@@ -110,6 +111,7 @@ impl AgentsTeamsService {
             write_client,
             read_client,
             observer_node_events,
+            aes_encryption_key: aes_encryption_key.into(),
         })
     }
 }

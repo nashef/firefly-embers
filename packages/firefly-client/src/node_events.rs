@@ -87,8 +87,8 @@ impl NodeEvents {
                     let deploys = match rx.recv().await {
                         Ok(NodeEvent::Started) => continue,
                         Ok(NodeEvent::BlockAdded { .. }) => continue,
-                        Ok(NodeEvent::BlockCreated { payload }) => payload.deploys,
-                        Ok(NodeEvent::BlockFinalised { .. }) => continue,
+                        Ok(NodeEvent::BlockCreated { .. }) => continue,
+                        Ok(NodeEvent::BlockFinalised { payload }) => payload.deploys,
                         Err(broadcast::error::RecvError::Closed) => return,
                         Err(broadcast::error::RecvError::Lagged(_)) => continue,
                     };

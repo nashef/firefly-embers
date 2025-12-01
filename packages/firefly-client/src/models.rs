@@ -4,7 +4,10 @@ use std::marker::PhantomData;
 use blake2::digest::consts::U32;
 use blake2::{Blake2b, Digest};
 use chrono::{DateTime, Utc};
+use crc::Crc;
 use derive_more::{AsRef, Display, From, Into};
+use digest::OutputSizeUser;
+use digest::typenum::Unsigned;
 use secp256k1::PublicKey;
 use serde::{Deserialize, Deserializer, Serialize, de};
 use thiserror::Error;
@@ -237,7 +240,7 @@ pub struct DeployData {
     #[builder(start_fn)]
     pub term: String,
 
-    #[builder(default = 500_000)]
+    #[builder(default = 5_000_000)]
     pub phlo_limit: u64,
 
     #[builder(default = chrono::Utc::now())]
@@ -253,7 +256,7 @@ pub enum NodeEvent {
     Started,
     BlockAdded { payload: BlockEventPayload },
     BlockCreated { payload: BlockEventPayload },
-    BlockFinalised { payload: FinalizedBlockPayload },
+    BlockFinalised { payload: BlockEventPayload },
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -269,12 +272,6 @@ pub struct BlockEventDeploy {
     pub cost: u64,
     pub deployer: PublicKey,
     pub errored: bool,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct FinalizedBlockPayload {
-    pub block_hash: BlockId,
 }
 
 pub const FIRECAP_ID: [u8; 3] = [0, 0, 0];
@@ -354,5 +351,79 @@ impl From<PublicKey> for WalletAddress {
         .concat();
 
         Self(bs58::encode(address_bytes).into_string())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Into, AsRef)]
+pub struct Uri(String);
+
+const CRC14: crc::Algorithm<u16> = crc::Algorithm {
+    width: 14,
+    poly: 0x4805,
+    init: 0x0000,
+    refin: false,
+    refout: false,
+    xorout: 0x0000,
+    check: 0,
+    residue: 0x0000,
+};
+
+impl From<PublicKey> for Uri {
+    fn from(value: PublicKey) -> Self {
+        let hash = Blake2b::<U32>::new()
+            .chain_update(value.serialize_uncompressed())
+            .finalize();
+
+        let crc = Crc::<u16>::new(&CRC14).checksum(&hash).to_ne_bytes();
+        let full_key = [hash.as_ref(), [crc[0], crc[1] << 2].as_ref()].concat();
+        let encoded = zbase32::encode(&full_key, 270);
+        Self(format!("rho:id:{encoded}"))
+    }
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum ParseUriError {
+    #[error("invalid uri prefix")]
+    IvalidPrefix,
+
+    #[error("invalid zbase32: {0}")]
+    InvalidZBase32(&'static str),
+
+    #[error("invalid decoded bytes length")]
+    InvalidDecodedLength,
+
+    #[error("checksum mistmatch")]
+    ChecksumMistmatch,
+}
+
+impl TryFrom<String> for Uri {
+    type Error = ParseUriError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        const HASH_SIZE: usize = <Blake2b<U32> as OutputSizeUser>::OutputSize::USIZE;
+
+        let encoded = value
+            .strip_prefix("rho:id:")
+            .ok_or(Self::Error::IvalidPrefix)?;
+        let decoded = zbase32::decode_str(encoded, 270).map_err(Self::Error::InvalidZBase32)?;
+        let bytes: [u8; HASH_SIZE + 2] = decoded
+            .try_into()
+            .map_err(|_| Self::Error::InvalidDecodedLength)?;
+
+        let (hash, crc_bytes) = bytes.split_at(HASH_SIZE);
+        let crc = u16::from_ne_bytes([crc_bytes[0], crc_bytes[1] >> 2]);
+        let expected = Crc::<u16>::new(&CRC14).checksum(hash);
+
+        if expected != crc {
+            return Err(Self::Error::ChecksumMistmatch);
+        }
+
+        Ok(Self(value))
+    }
+}
+
+impl IntoValue for Uri {
+    fn into_value(self) -> Value {
+        Value::Uri(self.0)
     }
 }

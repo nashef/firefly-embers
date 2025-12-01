@@ -23,7 +23,7 @@ pub fn prepare_for_signing(
         term: code,
         timestamp,
         phlo_price: 1,
-        phlo_limit: phlo_limit.map_or(500_000, |v| v.0),
+        phlo_limit: phlo_limit.map_or(5_000_000, |v| v.0),
         valid_after_block_number: valid_after_block_number as _,
         shard_id: "root".into(),
         ..Default::default()

@@ -3,28 +3,16 @@ use firefly_client::models::{DeployId, WalletAddress};
 
 use crate::common::models::PositiveNonZero;
 
-mod description;
-
-pub use description::*;
-
 pub type Amount = PositiveNonZero<i64>;
-
-pub type Id = String;
 
 #[derive(Debug, Clone)]
 pub struct Transfer {
-    pub id: Id,
-    pub direction: Direction,
-    pub date: DateTime<Utc>,
+    pub id: String,
+    pub timestamp: DateTime<Utc>,
+    pub from: WalletAddress,
+    pub to: WalletAddress,
     pub amount: Amount,
-    pub to_address: WalletAddress,
-    pub cost: u64,
-}
-
-#[derive(Debug, Clone)]
-pub enum Direction {
-    Incoming,
-    Outgoing,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -39,17 +27,19 @@ pub struct WalletStateAndHistory {
 #[derive(Debug, Clone)]
 pub struct Boost {
     pub id: String,
-    pub username: String,
-    pub direction: Direction,
-    pub date: DateTime<Utc>,
+    pub timestamp: DateTime<Utc>,
+    pub from: WalletAddress,
+    pub to: WalletAddress,
     pub amount: Amount,
-    pub post: String,
+    pub description: Option<String>,
+    pub post_author_did: String,
+    pub post_id: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Request {
     pub id: String,
-    pub date: DateTime<Utc>,
+    pub timestamp: DateTime<Utc>,
     pub amount: Amount,
     pub status: RequestStatus,
 }
@@ -70,7 +60,17 @@ pub struct TransferReq {
     pub from: WalletAddress,
     pub to: WalletAddress,
     pub amount: Amount,
-    pub description: Option<Description>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct BoostReq {
+    pub from: WalletAddress,
+    pub to: WalletAddress,
+    pub amount: Amount,
+    pub description: Option<String>,
+    pub post_author_did: String,
+    pub post_id: Option<String>,
 }
 
 #[derive(Debug, Clone)]

@@ -4,7 +4,7 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use derive_more::From;
 use firefly_client::helpers::ShortHex;
-use firefly_client::models::{DeployId, WalletAddress};
+use firefly_client::models::{DeployId, Uri, WalletAddress};
 use poem_openapi::payload::Json;
 use poem_openapi::registry::{MetaSchema, MetaSchemaRef, Registry};
 use poem_openapi::types::{
@@ -237,6 +237,38 @@ impl ToJSON for Stringified<WalletAddress> {
 }
 
 impl From<Stringified<Self>> for WalletAddress {
+    fn from(value: Stringified<Self>) -> Self {
+        value.0
+    }
+}
+
+impl Format for Uri {
+    type Alias = String;
+    fn format() -> &'static str {
+        "blockchain-uri"
+    }
+}
+
+impl ParseFromParameter for Stringified<Uri> {
+    fn parse_from_parameter(value: &str) -> ParseResult<Self> {
+        value.to_owned().try_into().map(Self).map_err(Into::into)
+    }
+}
+
+impl ParseFromJSON for Stringified<Uri> {
+    fn parse_from_json(value: Option<serde_json::Value>) -> ParseResult<Self> {
+        let value = String::parse_from_json(value).map_err(ParseError::propagate)?;
+        value.try_into().map(Self).map_err(Into::into)
+    }
+}
+
+impl ToJSON for Stringified<Uri> {
+    fn to_json(&self) -> Option<serde_json::Value> {
+        self.0.as_ref().to_json()
+    }
+}
+
+impl From<Stringified<Self>> for Uri {
     fn from(value: Stringified<Self>) -> Self {
         value.0
     }

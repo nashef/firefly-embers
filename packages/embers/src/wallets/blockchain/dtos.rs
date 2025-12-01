@@ -1,48 +1,47 @@
-use chrono::{DateTime, Utc};
-use firefly_client::models::{ParseWalletAddressError, WalletAddress};
+use firefly_client::models::ParseWalletAddressError;
 use serde::Deserialize;
 use thiserror::Error;
 
+use crate::common::blockchain;
 use crate::common::models::PositiveNonZeroParsingError;
-use crate::wallets::models::{Amount, Description, DescriptionError, Id};
+use crate::wallets::models::{Boost, Transfer};
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct BlockChainTransactionRecord {
-    id: String,
-    timestamp: DateTime<Utc>,
-    from: String,
-    to: String,
-    amount: i64,
-    description: Option<String>,
+pub struct TransferRecord {
+    pub id: String,
+    pub timestamp: blockchain::dtos::DateTime,
+    pub from: String,
+    pub to: String,
+    pub amount: i64,
+    pub description: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct Transaction {
-    pub id: Id,
-    pub timestamp: DateTime<Utc>,
-    pub from: WalletAddress,
-    pub to: WalletAddress,
-    pub amount: Amount,
-    pub description: Option<Description>,
+#[derive(Debug, Clone, Deserialize)]
+pub struct BoostRecord {
+    pub id: String,
+    pub timestamp: blockchain::dtos::DateTime,
+    pub from: String,
+    pub to: String,
+    pub amount: i64,
+    pub description: Option<String>,
+    pub post_author_did: String,
+    pub post_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Error)]
-pub enum TransferValidationError {
+pub enum HistoryValidationError {
     #[error("description format error: {0}")]
     AmountError(#[from] PositiveNonZeroParsingError),
     #[error("receiver wallet adress has wrong format: {0}")]
     WrongReceiverAddressFormat(ParseWalletAddressError),
     #[error("sender wallet adress has wrong format: {0}")]
     WrongSenderAddressFormat(ParseWalletAddressError),
-    #[error("description format error: {0}")]
-    DescriptionError(#[from] DescriptionError),
 }
 
-impl TryFrom<BlockChainTransactionRecord> for Transaction {
-    type Error = TransferValidationError;
+impl TryFrom<TransferRecord> for Transfer {
+    type Error = HistoryValidationError;
 
-    fn try_from(record: BlockChainTransactionRecord) -> Result<Self, Self::Error> {
+    fn try_from(record: TransferRecord) -> Result<Self, Self::Error> {
         let from = record
             .from
             .try_into()
@@ -53,15 +52,42 @@ impl TryFrom<BlockChainTransactionRecord> for Transaction {
             .map_err(Self::Error::WrongReceiverAddressFormat)?;
 
         let amount = record.amount.try_into()?;
-        let description = record.description.map(TryFrom::try_from).transpose()?;
 
         Ok(Self {
             id: record.id,
-            timestamp: record.timestamp,
+            timestamp: record.timestamp.into(),
             from,
             to,
             amount,
-            description,
+            description: record.description,
+        })
+    }
+}
+
+impl TryFrom<BoostRecord> for Boost {
+    type Error = HistoryValidationError;
+
+    fn try_from(record: BoostRecord) -> Result<Self, Self::Error> {
+        let from = record
+            .from
+            .try_into()
+            .map_err(Self::Error::WrongSenderAddressFormat)?;
+        let to = record
+            .to
+            .try_into()
+            .map_err(Self::Error::WrongReceiverAddressFormat)?;
+
+        let amount = record.amount.try_into()?;
+
+        Ok(Self {
+            id: record.id,
+            timestamp: record.timestamp.into(),
+            from,
+            to,
+            amount,
+            description: record.description,
+            post_author_did: record.post_author_did,
+            post_id: record.post_id,
         })
     }
 }
@@ -69,5 +95,6 @@ impl TryFrom<BlockChainTransactionRecord> for Transaction {
 #[derive(Debug, Clone, Deserialize)]
 pub struct BalanceAndHistory {
     pub balance: u64,
-    pub history: Vec<BlockChainTransactionRecord>,
+    pub transfers: Vec<TransferRecord>,
+    pub boosts: Vec<BoostRecord>,
 }

@@ -1,12 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use blake2::digest::consts::U32;
-use blake2::{Blake2b, Digest};
-use crc::Crc;
 use derive_more::{From, Into};
 pub use firefly_client_macros::{IntoValue, Render};
-use secp256k1::PublicKey;
 use uuid::Uuid;
 
 use crate::models::{DeployData, DeployDataBuilder};
@@ -126,43 +122,6 @@ impl IntoValue for &[u8] {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, From, Into)]
-pub struct Uri(String);
-
-impl From<PublicKey> for Uri {
-    fn from(value: PublicKey) -> Self {
-        const CRC14: crc::Algorithm<u16> = crc::Algorithm {
-            width: 14,
-            poly: 0x4805,
-            init: 0x0000,
-            refin: false,
-            refout: false,
-            xorout: 0x0000,
-            check: 0,
-            residue: 0x0000,
-        };
-
-        let hash = Blake2b::<U32>::new()
-            .chain_update(value.serialize_uncompressed())
-            .finalize();
-
-        let crc = Crc::<u16>::new(&CRC14);
-        let mut digest = crc.digest();
-        digest.update(&hash);
-        let crc = digest.finalize().to_le_bytes();
-
-        let full_key = [hash.as_ref(), [crc[0]].as_ref(), [crc[1] << 2].as_ref()].concat();
-        let encoded = zbase32::encode(&full_key, 270);
-        Self(format!("rho:id:{encoded}"))
-    }
-}
-
-impl IntoValue for Uri {
-    fn into_value(self) -> Value {
-        Value::Uri(self.0)
-    }
-}
-
 impl<T: IntoValue> IntoValue for Vec<T> {
     fn into_value(self) -> Value {
         Value::List(self.into_iter().map(IntoValue::into_value).collect())
@@ -205,7 +164,7 @@ impl IntoValue for Uuid {
 
 impl<Tz: chrono::TimeZone> IntoValue for chrono::DateTime<Tz> {
     fn into_value(self) -> Value {
-        self.to_rfc3339().into_value()
+        self.timestamp().into_value()
     }
 }
 

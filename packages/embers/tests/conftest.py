@@ -48,9 +48,10 @@ def test_wallet(client: ApiClient) -> Wallet:
 
 
 def assert_match_transfer(transfer: dict, match: dict):
-    assert transfer["direction"] == match["direction"]
+    assert transfer["from"] == match["from"]
+    assert transfer["to"] == match["to"]
     assert transfer["amount"] == match["amount"]
-    assert transfer["to_address"] == match["to_address"]
+    assert transfer.get("description") == match.get("description")
 
 
 @pytest.fixture

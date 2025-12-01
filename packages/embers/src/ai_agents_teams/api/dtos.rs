@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use firefly_client::models::WalletAddress;
+use firefly_client::models::{Uri, WalletAddress};
 use poem_openapi::{Object, Union};
 use structural_convert::StructuralConvert;
 
@@ -43,6 +43,7 @@ pub struct AgentsTeam {
     pub version: String,
     pub created_at: Stringified<DateTime<Utc>>,
     pub last_deploy: Option<Stringified<DateTime<Utc>>>,
+    pub uri: Option<Stringified<Uri>>,
     pub name: String,
     pub description: Option<String>,
     pub shard: Option<String>,
@@ -134,11 +135,27 @@ pub struct DeploySignedAgentsTeamtReq {
 pub struct RunAgentsTeamReq {
     pub prompt: String,
     pub phlo_limit: Stringified<PositiveNonZero<i64>>,
-    pub agents_team: String,
+    pub agents_team: Stringified<Uri>,
 }
 
 #[derive(Debug, Clone, StructuralConvert, Object)]
 #[convert(from(models::RunAgentsTeamResp))]
 pub struct RunAgentsTeamResp {
+    pub contract: PreparedContract,
+}
+
+#[derive(Debug, Clone, StructuralConvert, Object)]
+#[convert(into(models::PublishAgentsTeamToFireskyReq))]
+pub struct PublishAgentsTeamToFireskyReq {
+    pub pds_url: String,
+    pub email: String,
+    pub handle: String,
+    pub password: String,
+    pub invite_code: Option<String>,
+}
+
+#[derive(Debug, Clone, StructuralConvert, Object)]
+#[convert(from(models::PublishAgentsTeamToFireskyResp))]
+pub struct PublishAgentsTeamToFireskyResp {
     pub contract: PreparedContract,
 }

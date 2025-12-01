@@ -1,4 +1,4 @@
-use firefly_client::rendering::Uri;
+use firefly_client::models::Uri;
 use firefly_client::{NodeEvents, ReadNodeClient, WriteNodeClient};
 use secp256k1::SecretKey;
 

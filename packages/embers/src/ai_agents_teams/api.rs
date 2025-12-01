@@ -13,6 +13,8 @@ use crate::ai_agents_teams::api::dtos::{
     DeployAgentsTeamReq,
     DeployAgentsTeamResp,
     DeploySignedAgentsTeamtReq,
+    PublishAgentsTeamToFireskyReq,
+    PublishAgentsTeamToFireskyResp,
     RunAgentsTeamReq,
     RunAgentsTeamResp,
     SaveAgentsTeamReq,
@@ -182,6 +184,34 @@ impl AIAgentsTeams {
         Data(agents): Data<&AgentsTeamsService>,
     ) -> poem::Result<Json<SendResp>> {
         let deploy_id = agents.deploy_signed_delete_agents_team(body.into()).await?;
+        Ok(Json(deploy_id.into()))
+    }
+
+    #[oai(path = "/:address/:id/publish-to-firesky/prepare", method = "post")]
+    async fn prepare_publish_agents_team_to_firesky(
+        &self,
+        Path(address): Path<Stringified<WalletAddress>>,
+        Path(id): Path<String>,
+        Json(body): Json<PublishAgentsTeamToFireskyReq>,
+        Data(agents_teams): Data<&AgentsTeamsService>,
+    ) -> poem::Result<Json<PublishAgentsTeamToFireskyResp>> {
+        let contract = agents_teams
+            .prepare_publish_agents_team_to_firesky_contract(address.into(), id, body.into())
+            .await?;
+        Ok(Json(contract.into()))
+    }
+
+    #[oai(path = "/:address/:id/publish-to-firesky/send", method = "post")]
+    async fn publish_agents_team_to_firesky(
+        &self,
+        #[allow(unused_variables)] Path(address): Path<Stringified<WalletAddress>>,
+        #[allow(unused_variables)] Path(id): Path<String>,
+        Json(body): Json<SignedContract>,
+        Data(agents_teams): Data<&AgentsTeamsService>,
+    ) -> poem::Result<Json<SendResp>> {
+        let deploy_id = agents_teams
+            .deploy_signed_publish_agents_team_to_firesky(body.into())
+            .await?;
         Ok(Json(deploy_id.into()))
     }
 }
