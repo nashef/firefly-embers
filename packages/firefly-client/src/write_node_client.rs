@@ -4,6 +4,8 @@ use blake2::{Blake2b, Digest};
 use futures::TryStreamExt;
 use prost::Message as _;
 use secp256k1::{Message, Secp256k1, SecretKey};
+use tokio::time::{sleep, Duration};
+use tracing::warn;
 
 use crate::helpers::FromExpr;
 use crate::models::casper::v1::deploy_service_client::DeployServiceClient;
@@ -19,6 +21,9 @@ use crate::models::rhoapi::expr::ExprInstance;
 use crate::models::rhoapi::{Expr, Par};
 use crate::models::{BlockId, DeployData, DeployId, SignedCode, ValidAfter};
 
+const INITIAL_BACKOFF_SECS: u64 = 1;
+const MAX_BACKOFF_SECS: u64 = 64;
+
 #[derive(Clone)]
 pub struct WriteNodeClient {
     deploy_client: DeployServiceClient<tonic::transport::Channel>,
@@ -30,11 +35,32 @@ impl WriteNodeClient {
         deploy_service_url: String,
         propose_service_url: String,
     ) -> anyhow::Result<Self> {
-        let deploy_client = DeployServiceClient::connect(deploy_service_url)
+        let mut backoff = INITIAL_BACKOFF_SECS;
+
+        loop {
+            match Self::try_connect(&deploy_service_url, &propose_service_url).await {
+                Ok(client) => return Ok(client),
+                Err(err) => {
+                    warn!(
+                        error = ?err,
+                        "validator not ready (genesis likely still running); retrying in {backoff}s"
+                    );
+                    sleep(Duration::from_secs(backoff)).await;
+                    backoff = (backoff.saturating_mul(2)).min(MAX_BACKOFF_SECS);
+                }
+            }
+        }
+    }
+
+    async fn try_connect(
+        deploy_service_url: &str,
+        propose_service_url: &str,
+    ) -> anyhow::Result<Self> {
+        let deploy_client = DeployServiceClient::connect(deploy_service_url.to_owned())
             .await
             .context("failed to connect to deploy service")?;
 
-        let propose_client = ProposeServiceClient::connect(propose_service_url)
+        let propose_client = ProposeServiceClient::connect(propose_service_url.to_owned())
             .await
             .context("failed to connect to propose service")?;
 
