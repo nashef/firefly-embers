@@ -1,5 +1,6 @@
 use anyhow::Context;
 use serde_json::Value;
+use tracing::info;
 
 use crate::errors::ReadNodeError;
 use crate::models::ReadNodeExpr;
@@ -23,6 +24,8 @@ impl ReadNodeClient {
         T: serde::de::DeserializeOwned,
     {
         let mut response_json = self.explore_deploy(rholang_code).await?;
+
+        info!(response_json = %response_json, "explore_deploy response");
 
         let data_value = response_json
             .pointer_mut("/expr/0")
