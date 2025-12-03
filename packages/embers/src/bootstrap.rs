@@ -48,10 +48,12 @@ impl AgentsService {
 
         let deploy_data = DeployData::builder(code).timestamp(timestamp).build();
 
+        tracing::info!("AgentsService: Starting deploy...");
         write_client
             .deploy(deployer_key, deploy_data)
             .await
             .context("failed to deploy agents env")?;
+        tracing::info!("AgentsService: Deploy succeeded!");
 
         Ok(Self {
             uri: env_uri,
@@ -101,10 +103,12 @@ impl AgentsTeamsService {
 
         let deploy_data = DeployData::builder(code).timestamp(timestamp).build();
 
+        tracing::info!("AgentsTeamsService: Starting deploy...");
         write_client
             .deploy(deployer_key, deploy_data)
             .await
             .context("failed to deploy agents teams env")?;
+        tracing::info!("AgentsTeamsService: Deploy succeeded!");
 
         Ok(Self {
             uri: env_uri,
@@ -156,10 +160,12 @@ impl WalletsService {
 
         let deploy_data = DeployData::builder(code).timestamp(timestamp).build();
 
+        tracing::info!("WalletsService: Starting deploy...");
         write_client
             .deploy(deployer_key, deploy_data)
             .await
             .context("failed to deploy wallets env")?;
+        tracing::info!("WalletsService: Deploy succeeded!");
 
         Ok(Self {
             uri: env_uri,
@@ -210,10 +216,12 @@ impl TestnetService {
 
         let deploy_data = DeployData::builder(code).timestamp(timestamp).build();
 
+        tracing::info!("TestnetService: Starting deploy...");
         write_client
             .deploy(&deployer_key, deploy_data)
             .await
             .context("failed to deploy testnet env")?;
+        tracing::info!("TestnetService: Deploy succeeded!");
 
         Ok(Self {
             uri: env_uri,
